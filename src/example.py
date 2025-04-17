@@ -1,3 +1,7 @@
+"""
+Example of using TaskRunner to run nmap commands with Task objects.
+"""
+
 from taskcapsule import Task, TaskRunner
 
 if __name__ == "__main__":

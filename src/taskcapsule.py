@@ -95,18 +95,22 @@ class TaskResult(BaseModel):
 
 
 class TaskRunner(BaseModel):
+    """
+    A class to run tasks in parallel using threads.
+    """
+
     tasks: List[Task]
     workers: int = DEFAULT_WORKERS
 
-    def worker(self, wid: int, queue: queue.Queue):
+    def worker(self, wid: int, task_queue: queue.Queue):
         """
         Worker function to process items in the queue.
         :param wid: worker id  to identify the worker
         :param queue: queue to process items from
         """
         logger.debug("starting worker-%d", wid)
-        while not queue.empty():
-            task = queue.get()
+        while not task_queue.empty():
+            task = task_queue.get()
             rendered = task.render_command()
             try:
                 logger.debug("worker-%d working on %s", wid, rendered)
@@ -142,18 +146,19 @@ class TaskRunner(BaseModel):
                 if result.is_success() and result.contains_filter():
                     print(result.model_dump_json())
 
-            except Exception as e:
+            # No idea what is being run in the subprocess, so catch all exceptions
+            except Exception as e:  # pylint: disable=broad-except
                 logger.error("worker-%s error processing %s: %s", wid, task, e)
 
             finally:
-                queue.task_done()
+                task_queue.task_done()
 
             if task is None:
-                queue.task_done()
+                task_queue.task_done()
 
         logger.debug("worker worker-%s done", wid)
 
-    def run(self):
+    def run(self) -> None:
         """
         Start a thread pool to process items in the queue.
         :param items: list of items to process

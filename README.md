@@ -31,7 +31,7 @@ tr.run()
 
 `python example.py|jq`
 
-```
+```log
 INFO:taskcapsule:spawning 1 workers
 {
   "command": "nmap -oG - -p 7002 --script weblogic-t3-info 1.2.3.4",
