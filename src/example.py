@@ -1,4 +1,4 @@
-from taskrunner import Task, TaskRunner
+from taskcapsule import Task, TaskRunner
 
 if __name__ == "__main__":
     items = ["1.2.3.4,7002"]

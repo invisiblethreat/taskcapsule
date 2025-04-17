@@ -1,4 +1,4 @@
-# taskrunner
+# taskcapsule
 
 A simple framework for running commands in parallel using templated commands and dictionaries of
 arguments.
@@ -6,7 +6,7 @@ arguments.
 ## Example
 
 ```python
-from taskrunner import TaskRunner, Task
+from taskcapsule import TaskRunner, Task
 # Look to see if the host is running WebLogic T3
 template = "nmap -oG - -p {port} --script weblogic-t3-info {addr}"
 items = {"addr":"1.2.3.4","port": "7002"}
@@ -32,7 +32,7 @@ tr.run()
 `python example.py|jq`
 
 ```
-INFO:task-runner:spawning 1 workers
+INFO:taskcapsule:spawning 1 workers
 {
   "command": "nmap -oG - -p 7002 --script weblogic-t3-info 1.2.3.4",
   "kwargs": {
