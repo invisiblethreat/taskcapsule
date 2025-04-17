@@ -1,10 +1,10 @@
 [project]
 name = "taskcapsule"
-authors = [{ name = "Your Name", email = "scott@invisiblethreat.ca" }]
+authors = [{ name = "Scott Walsh", email = "scott@invisiblethreat.ca" }]
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = ["pydantic>=2.11.3"]
-version = "0.1.1"
+version = "0.1.2"
 description = "A simple task runner for Python"
 license = { text = "MIT" }
 classifiers = [
