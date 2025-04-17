@@ -45,7 +45,7 @@ INFO:taskcapsule:spawning 1 workers
   "duration": 0.7490861415863037,
   "success_filter": "T3",
   "target_metadata": {
-    "entity_id": ""
+    "uuid": "fedcba09-1234-1111-bcde-1234567890fe"
   }
 }
 INFO:task-runner:all tasks completed
