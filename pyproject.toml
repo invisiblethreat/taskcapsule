@@ -13,7 +13,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-keywords = ["taskcapsule", "automation", "pydantic"]
+keywords = ["taskcapsule"]
 
 [project.urls]
 repository = "https://github.com/invisiblethreat/taskcapsule"
