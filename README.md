@@ -9,7 +9,7 @@ arguments.
 from taskcapsule import TaskRunner, Task
 # Look to see if the host is running WebLogic T3
 template = "nmap -oG - -p {port} --script weblogic-t3-info {addr}"
-items = {"addr":"1.2.3.4","port": "7002"}
+items = [{"addr":"1.2.3.4","port": "7002"}]
 my_tasks = []
 for i in items:
     kwargs = items
