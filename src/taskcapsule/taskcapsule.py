@@ -96,7 +96,10 @@ class Task(BaseModel):
 
             if expected_args == provided_args:
                 if isinstance(self.kwargs, dict):
-                    rendered = self.command.format(**self.kwargs)
+                    if isinstance(self.kwargs, dict):
+                        rendered = self.command.format(**self.kwargs)
+                    else:
+                        logger.error("kwargs is not a dictionary, skipping task")
                 else:
                     logger.error("kwargs is not a dictionary, skipping task")
         return rendered
@@ -175,7 +178,7 @@ class TaskRunner(BaseModel):
                 all_items,
             )
             time.sleep(MONITOR_SLEEP)
-        logger.debug("monitored queue has all work assigned")
+        logger.info("work assigned: %s/%s", all_items, all_items)
         work_queue.join()
         logger.debug("monitor thread done")
 
