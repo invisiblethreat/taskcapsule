@@ -1,13 +1,13 @@
 """
-Run tasks in parallel using threads. This is a simple task runner that uses threads to run
-tasks in parallel.
+Run tasks concurrently using threads.
 """
 
 import logging
-import queue
 import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor
+from queue import Queue
+from threading import Event, Thread
 from typing import Any, Callable, Dict, List, Optional
 
 from pydantic import BaseModel
@@ -19,6 +19,7 @@ logger.setLevel(level=logging.INFO)
 DEFAULT_WORKERS = 10
 DEFAULT_SUCCESS = 0
 DEFAULT_FAILURE = -1
+MONITOR_SLEEP = 2
 
 
 class TaskException(Exception):
@@ -94,7 +95,10 @@ class Task(BaseModel):
                 )
 
             if expected_args == provided_args:
-                rendered = self.command.format(**self.kwargs)
+                if isinstance(self.kwargs, dict):
+                    rendered = self.command.format(**self.kwargs)
+                else:
+                    logger.error("kwargs is not a dictionary, skipping task")
         return rendered
 
 
@@ -145,7 +149,37 @@ class TaskRunner(BaseModel):
     workers: int = DEFAULT_WORKERS
     show_failures: bool = False
 
-    def worker(self, wid: int, task_queue: queue.Queue):
+    # If we want to shoot our own foot, we can set this to False. This will allow us to run tasks
+    #  with fewer checks. This is probably a bad idea to disable
+    safety: bool = True
+
+    # If we want to monitor the tasks, we can set this to True. This will emit logging messages
+    # about progress
+    monitoring: bool = True
+
+    def _monitor(self, finished: Event, work_queue: Queue, all_items: int) -> None:
+        """
+
+        Monitor the progress of the tasks in the queue. This function is run in a separate thread
+        to avoid blocking the main thread.
+
+        :param finished: event to signal when the tasks are finished
+        :param work_queue: queue to monitor
+        :param all_items: total number of items in the queue
+        """
+        logger.debug("starting monitor thread")
+        while not work_queue.empty() and not finished.is_set():
+            logger.info(
+                "work assigned: %s/%s",
+                all_items - work_queue.qsize(),
+                all_items,
+            )
+            time.sleep(MONITOR_SLEEP)
+        logger.debug("monitored queue has all work assigned")
+        work_queue.join()
+        logger.debug("monitor thread done")
+
+    def worker(self, wid: int, task_queue: Queue):
         """
         Worker function to process items in the queue.
         :param wid: worker id  to identify the worker
@@ -264,7 +298,7 @@ class TaskRunner(BaseModel):
         Start a thread pool to process items in the queue.
         :param items: list of items to process
         """
-        worker_queue: queue.Queue = queue.Queue()
+        worker_queue: Queue = Queue()
 
         # Don't overspawn workers
         num_workers = min(self.workers, len(self.tasks))
@@ -274,9 +308,24 @@ class TaskRunner(BaseModel):
             for t in self.tasks:
                 worker_queue.put(t)
 
+            finished = Event()
+            monitor = Thread(
+                target=self._monitor,
+                args=(
+                    finished,
+                    worker_queue,
+                    len(self.tasks),
+                ),
+            )
+            monitor.start()
+
             for wid in range(num_workers):
                 controller.submit(self.worker, wid, worker_queue)
 
             logger.debug("joining queue")
             worker_queue.join()
+            finished.set()
+
+            # wait for the monitor thread to finish
+            time.sleep(MONITOR_SLEEP)
             logger.info("all tasks completed")
