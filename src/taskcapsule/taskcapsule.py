@@ -73,6 +73,15 @@ class Task(BaseModel):
         if self.command is not None and self.function is not None:
             raise TaskException("Only command or function must be provided")
 
+        if self.function is not None and self.kwargs is None:
+            raise TaskException("kwargs must be provided for function tasks")
+
+        if self.command is not None and self.kwargs is None:
+            logger.warning(
+                "command %s does not have any arguments, this may be a mistake",
+                self.command,
+            )
+
     def render_command(self) -> str | None:
         """
         Render the command with the given arguments.
@@ -127,14 +136,16 @@ class TaskResult(BaseModel):
         """
         Check if the job was successful based on the return code. POSIX standards define success
          as a return code of 0.
-        :return: True if the job was successful, False otherwise.
+
+        :return bool: True if the job was successful, False otherwise.
         """
         return self.return_code == 0
 
     def contains_filter(self) -> bool:
         """
         Check if the job output contains the success filter.
-        :return: True if the job output contains the success filter, False otherwise.
+
+        :return bool: True if the job output contains the success filter, False otherwise.
         """
         if self.success_filter is None:
             logger.info("success filter is None, skipping check")
@@ -178,15 +189,21 @@ class TaskRunner(BaseModel):
                 all_items,
             )
             time.sleep(MONITOR_SLEEP)
-        logger.info("work assigned: %s/%s", all_items, all_items)
+        logger.debug("monitored queue has all work assigned")
+        logger.info(
+            "work assigned: %s/%s",
+            all_items,
+            all_items,
+        )
         work_queue.join()
         logger.debug("monitor thread done")
 
     def worker(self, wid: int, task_queue: Queue):
         """
         Worker function to process items in the queue.
-        :param wid: worker id  to identify the worker
-        :param queue: queue to process items from
+
+        :param int wid: worker id  to identify the worker
+        :param Queue queue: queue to process items from
         """
         logger.debug("starting worker-%d", wid)
         while not task_queue.empty():
@@ -217,7 +234,7 @@ class TaskRunner(BaseModel):
         """
         Run a subprocess with the given command and arguments.
 
-        :param Task: task to run
+        :param task Task: task to run
         :return TaskResult: TaskResult object with the result of the task
         """
         start_time = time.time()
@@ -264,6 +281,12 @@ class TaskRunner(BaseModel):
         return res
 
     def _run_function(self, task: Task) -> TaskResult | None:
+        """
+        Run a function with the given command and arguments.
+
+        :param task Task: task to run
+        :return TaskResult: TaskResult object with the result of the task
+        """
         start_time = time.time()
         res = None
         if task.function is None:
@@ -299,7 +322,6 @@ class TaskRunner(BaseModel):
     def run(self) -> None:
         """
         Start a thread pool to process items in the queue.
-        :param items: list of items to process
         """
         worker_queue: Queue = Queue()
 
